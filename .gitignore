@@ -171,6 +171,7 @@ cython_debug/
 .pypirc
 
 #Doxygen
+/docs/
 /html/
 /latex/
 /xml/
