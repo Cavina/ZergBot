@@ -1,35 +1,49 @@
-import random
-from pysc2.agents import base_agent
-from pysc2.lib import actions, features
-
 class Node:
-    def run(self, obs):
-        raise NotImplementedError
-
+    "Base Class"
+    def run(self):
+        raise NotImplementedError("Must implement the run method by a subclass")
+    
 class Selector(Node):
     def __init__(self, children):
         self.children = children
+        self.current_child = 0
+        self.status = "FAILURE"
 
     def run(self, obs):
-        for child in self.children:
-            if child.run(obs):
-                return True
-        return False
+        while self.current_child < len(self.children):
+            action = self.children[self.current_child].run(obs)
+            if action:
+                self.current_child = 0
+                self.status = "SUCCESS"
+                return action
+            self.current_child += 1
+        self.current_child = 0
+        return "FAILURE"
     
+
 class Sequence(Node):
-    def __init_(self, children):
+    def __init__(self, children):
         self.children = children
-    
-    def run(self, obs):
-        for child in self.children:
-            if not child.run(obs):
-                return False
-        return True
+        self.current_child = 0
 
-class Leaf(Node):
-    def __init__(self, action):
+    def run(self, obs):
+        while self.current_child < len(self.children):
+            result = self.children[self.current_child].run(obs)
+            if result == "FAILURE":
+                self.current_child = 0
+            elif result == "RUNNING":
+                return "RUNNING"
+            self.current_child += 1
+        self.current_child = 0
+        return "SUCCESS"
+    
+class ActionNode(Node):
+    def __init__(self, name, action):
+        self.name = name
         self.action = action
 
     def run(self, obs):
-        return self.action(obs)
-    
+        action = self.action(obs)
+        if action:
+            return action
+        return "FAILURE"
