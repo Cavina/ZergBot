@@ -56,7 +56,7 @@ class QLearningTable:
         q_predict = self.q_table.ix[s, a]
         q_target = r + self.gamma * self.q_table.ix[s_, :].max()
 
-        self.q_table.ix[s, a] += self.lr * (q_targtet-q_predict)
+        self.q_table.ix[s, a] += self.lr * (q_target-q_predict)
 
     def check_state_exists(self, state):
         if state not in self.q_table.index:
