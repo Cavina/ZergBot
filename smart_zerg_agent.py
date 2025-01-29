@@ -6,11 +6,17 @@ import pandas as pd
 
 from pysc2.agents import base_agent
 import zerg_definitions
+import zerg_actions 
 from pysc2.lib import actions
 from pysc2.lib import features
 from logger_config import logger
 
 class SmartZergAgent(base_agent.BaseAgent):
+    def __init__(self):
+        super(SmartZergAgent, self).__init__()
+
+        self.qlearn = QLearningTable(actions=list(range(len(zerg_actions.smart_actions))))
+
     def transformLocation(self, x, x_one, y, y_one):
         if not self.base_top_left:
             return [x - x_one, y - y_one]
@@ -23,6 +29,40 @@ class SmartZergAgent(base_agent.BaseAgent):
         #minimap should be feature_minimap
         player_y, player_x = (obs.observation['feature_screen'][zerg_definitions._PLAYER_RELATIVE] == zerg_definitions._PLAYER_SELF).nonzero()
         self.base_top_left = 1 if player_y.any() and player_y.mean() <= 31 else 0
+
+        smart_action = zerg_actions.smart_actions[random.randrange(0, len(zerg_actions.smart_actions) - 1)]
+
+        if smart_action == zerg_actions.ACTION_DO_NOTHING:
+            return actions.FunctionCall(zerg_definitions._NO_OP, [])
+        elif smart_action == zerg_actions.ACTION_SELECT_DRONE:
+            unit_type = obs.observation['feature_screen'][zerg_definitions._UNIT_TYPE]
+            unit_y, unit_x = (unit_type == zerg_definitions._ZERG_DRONE).nonzero()
+
+            if unit_y.any():
+                i = random.randint(0, len(unit_y)-1)
+                target = [unit_x[i], unit_y[i]]
+
+                return actions.FunctionCall(zerg_definitions._SELECT_POINT, [zerg_definitions._NOT_QUEUED, target])
+        elif smart_action == zerg_actions.ACTION_SELECT_LARVA:
+            unit_type = obs.observation['feature_screen'][zerg_definitions._UNIT_TYPE]
+            unit_y, unit_x = (unit_type == zerg_definitions._ZERG_LARVA).nonzero()
+
+            if unit_y.any():
+                i = random.randint(0, len(unit_y)-1)
+                target = [unit_x[i], unit_y[i]]
+                return actions.FunctionCall(zerg_definitions._SELECT_POINT, [zerg_definitions._NOT_QUEUED, target])
+        elif smart_action == zerg_actions.ACTION_BUILD_SPAWNINGPOOL:
+            if zerg_definitions._BUILD_SPAWNINGPOOL in obs.observation['available_actions']:
+                unit_type = obs.observation['feature_screen'][zerg_definitions._UNIT_TYPE]
+                unit_y, unit_x = (unit_type == zerg_definitions._ZERG_HATCHERY).nonzero()
+
+                if unit_y.any():
+                    target = self.transformLocation(int(unit_x.mean()), 20, int(unit_y.mean()), 0)
+                    # target = [int(unit_x.mean()), int(unit_y.mean() + 10)]
+                    return actions.FunctionCall(zerg_definitions._BUILD_SPAWNINGPOOL, [zerg_definitions._NOT_QUEUED, target])
+        elif smart_action == zerg_actions.ACTION_BUILD_ZERGLING:
+            if zerg_definitions._TRAIN_ZERGLING in obs.observation['available_actions']:
+                return actions.FunctionCall(zerg_definitions._TRAIN_ZERGLING, [zerg_definitions._NOT_QUEUED])
 
         return actions.FunctionCall(zerg_definitions._NO_OP, [])
 
