@@ -6,6 +6,7 @@ _NO_OP = actions.FUNCTIONS.no_op.id
 _SELECT_POINT = actions.FUNCTIONS.select_point.id
 _BUILD_SPAWNINGPOOL = actions.FUNCTIONS.Build_SpawningPool_screen.id
 _TRAIN_ZERGLING = actions.FUNCTIONS.Train_Zergling_quick.id
+_TRAIN_OVERLORD = actions.FUNCTIONS.Train_Overlord_quick.id
 
 _PLAYER_RELATIVE = features.SCREEN_FEATURES.player_relative.index
 _UNIT_TYPE = features.SCREEN_FEATURES.unit_type.index

@@ -58,12 +58,15 @@ class SmartZergAgent(base_agent.BaseAgent):
 
                 if unit_y.any():
                     target = self.transformLocation(int(unit_x.mean()), 20, int(unit_y.mean()), 0)
-                    # target = [int(unit_x.mean()), int(unit_y.mean() + 10)]
                     return actions.FunctionCall(zerg_definitions._BUILD_SPAWNINGPOOL, [zerg_definitions._NOT_QUEUED, target])
         elif smart_action == zerg_actions.ACTION_BUILD_ZERGLING:
             if zerg_definitions._TRAIN_ZERGLING in obs.observation['available_actions']:
                 return actions.FunctionCall(zerg_definitions._TRAIN_ZERGLING, [zerg_definitions._NOT_QUEUED])
-
+        elif smart_action == zerg_actions.ACTION_BUILD_OVERLORD:
+            if zerg_definitions._TRAIN_OVERLORD in obs.observation['available_actions']:
+                supply_available = obs.observation["player"][4] - obs.observation["player"][3]
+                if supply_available == 0:
+                    return actions.FunctionCall(zerg_definitions._TRAIN_OVERLORD, [zerg_definitions._NOT_QUEUED])
         return actions.FunctionCall(zerg_definitions._NO_OP, [])
 
 class QLearningTable:
