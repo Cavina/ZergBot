@@ -62,11 +62,22 @@ class SmartZergAgent(base_agent.BaseAgent):
         elif smart_action == zerg_actions.ACTION_BUILD_ZERGLING:
             if zerg_definitions._TRAIN_ZERGLING in obs.observation['available_actions']:
                 return actions.FunctionCall(zerg_definitions._TRAIN_ZERGLING, [zerg_definitions._NOT_QUEUED])
+        
         elif smart_action == zerg_actions.ACTION_BUILD_OVERLORD:
             if zerg_definitions._TRAIN_OVERLORD in obs.observation['available_actions']:
                 supply_available = obs.observation["player"][4] - obs.observation["player"][3]
                 if supply_available == 0:
                     return actions.FunctionCall(zerg_definitions._TRAIN_OVERLORD, [zerg_definitions._NOT_QUEUED])
+                
+        elif smart_action == zerg_actions.ACTION_SELECT_ARMY:
+            if zerg_definitions._SELECT_ARMY in obs.observation['available_actions']:
+                return actions.FunctionCall(zerg_definitions._SELECT_ARMY, [zerg_definitions._NOT_QUEUED])
+
+        elif smart_action == zerg_actions.ACTION_ATTACK:
+            if zerg_definitions._ATTACK_MINIMAP in obs.observation['available_actions']:
+                if self.base_top_left:
+                    return actions.FunctionCall(zerg_definitions._ATTACK_MINIMAP, [zerg_definitions._NOT_QUEUED, [39, 45]])
+                return actions.FunctionCall(zerg_definitions._ATTACK_MINIMAP, [zerg_definitions._NOT_QUEUED, [21, 24]])
         return actions.FunctionCall(zerg_definitions._NO_OP, [])
 
 class QLearningTable:
