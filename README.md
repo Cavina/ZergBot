@@ -1,128 +1,106 @@
-System Design Report: Post-Game Analysis Tool with LLMs
+# System Design Report: Post-Game Analysis Tool with LLMs
 
-1. Introduction
+## 1. Introduction
 
-1.1 Purpose
+### 1.1 Purpose
 
 The purpose of this document is to outline the system design for a Post-Game Analysis Tool that leverages Large Language Models (LLMs) to analyze game data, generate insights, and provide strategic coaching for players in real-time strategy (RTS) games, such as StarCraft II.
 
-1.2 Objectives
+### 1.2 Objectives
 
-Capture and analyze game logs (player actions, game state, Q-values, outcomes).
+- Capture and analyze game logs (player actions, game state, Q-values, outcomes).
+- Utilize LLMs to translate raw data into human-readable strategic insights.
+- Provide post-match reports with decision analysis, performance metrics, and improvement suggestions.
+- Enhance learning by retrieving past similar game situations and comparing decisions.
+- Deploy the system efficiently for real-time and post-game feedback.
 
-Utilize LLMs to translate raw data into human-readable strategic insights.
+## 2. System Architecture
 
-Provide post-match reports with decision analysis, performance metrics, and improvement suggestions.
-
-Enhance learning by retrieving past similar game situations and comparing decisions.
-
-Deploy the system efficiently for real-time and post-game feedback.
-
-2. System Architecture
-
-2.1 High-Level Overview
+### 2.1 High-Level Overview
 
 The system consists of:
 
-Data Ingestion Layer: Captures game data via APIs, logs, or computer vision.
+- **Data Ingestion Layer**: Captures game data via APIs, logs, or computer vision.
+- **Data Processing Layer**: Extracts relevant state-action pairs and computes metrics.
+- **Analysis & Decision Layer**: Uses LLMs & reinforcement learning models to analyze decisions.
+- **Feedback & Reporting Layer**: Generates natural language explanations, heatmaps, and suggestions.
+- **User Interface Layer**: Displays insights via dashboards, reports, or voice feedback.
 
-Data Processing Layer: Extracts relevant state-action pairs and computes metrics.
+### 2.2 Component Diagram
 
-Analysis & Decision Layer: Uses LLMs & reinforcement learning models to analyze decisions.
-
-Feedback & Reporting Layer: Generates natural language explanations, heatmaps, and suggestions.
-
-User Interface Layer: Displays insights via dashboards, reports, or voice feedback.
-
-2.2 Component Diagram
-
+```
 Game Data Input → Log Processing → Q-Value Analysis → LLM Decision Analysis → Feedback Generation → Dashboard/Report Delivery
+```
 
-Storage: Past games stored in SQL/NoSQL & Vector Database (FAISS/Pinecone)
+- **Storage**: Past games stored in SQL/NoSQL & Vector Database (FAISS/Pinecone)
+- **Model Deployment**: Hosted via Cloud (AWS/GCP) or local inference (Hugging Face, OpenAI API)
 
-Model Deployment: Hosted via Cloud (AWS/GCP) or local inference (Hugging Face, OpenAI API)
+## 3. Key Components & Implementation
 
-3. Key Components & Implementation
+### 3.1 Data Ingestion & Preprocessing
 
-3.1 Data Ingestion & Preprocessing
+- **Sources**: Game logs, API hooks, screen capture (computer vision for UI-based games)
+- **Storage**: Structured in SQL/NoSQL databases for easy retrieval
+- **Normalization**: Standardizes logs for consistency across different games
 
-Sources: Game logs, API hooks, screen capture (computer vision for UI-based games)
+### 3.2 Analysis & Decision Explanation
 
-Storage: Structured in SQL/NoSQL databases for easy retrieval
+- **Q-Learning/DQN Model**: Extracts expected rewards for different actions
+- **LLM (GPT-4, Claude, Llama)**: Interprets game decisions and explains them in human terms
+- **Retrieval-Augmented Generation (RAG)**: Fetches similar past game situations for comparison
 
-Normalization: Standardizes logs for consistency across different games
+### 3.3 Feedback & Reporting
 
-3.2 Analysis & Decision Explanation
+- **Real-Time Alerts**: Immediate tips during the match (optional for live coaching)
+- **Post-Match Reports**: Heatmaps, best/worst decisions, missed opportunities
+- **Strategic Insights**: Suggests alternative moves based on historical performance
 
-Q-Learning/DQN Model: Extracts expected rewards for different actions
+## 4. Infrastructure & Deployment
 
-LLM (GPT-4, Claude, Llama): Interprets game decisions and explains them in human terms
+### 4.1 Compute Resources
 
-Retrieval-Augmented Generation (RAG): Fetches similar past game situations for comparison
+- **Cloud** (AWS/GCP) for scalable LLM inference
+- **On-Premise**: Local inference with quantized models (GGUF/Llama.cpp for latency optimization)
 
-3.3 Feedback & Reporting
+### 4.2 Storage
 
-Real-Time Alerts: Immediate tips during the match (optional for live coaching)
+- **Vector Database** (FAISS, Pinecone) for retrieving similar game states
+- **SQL/NoSQL Databases** for structured game logs
 
-Post-Match Reports: Heatmaps, best/worst decisions, missed opportunities
+### 4.3 API & UI
 
-Strategic Insights: Suggests alternative moves based on historical performance
+- **REST API** (FastAPI, Flask) to serve analysis results
+- **Web Dashboard** (React, Django, Flask) for visualization
 
-4. Infrastructure & Deployment
+## 5. Challenges & Considerations
 
-4.1 Compute Resources
+### 5.1 LLM Fine-Tuning vs. Prompt Engineering
 
-Cloud (AWS/GCP) for scalable LLM inference
+- Fine-tuning requires labeled game data
+- Prompt engineering enables flexible, general-purpose explanations
 
-On-Premise: Local inference with quantized models (GGUF/Llama.cpp for latency optimization)
+### 5.2 Real-Time Processing vs. Post-Game Analysis
 
-4.2 Storage
+- **Live Coaching** requires efficient low-latency inference
+- **Post-Game Reports** allow deeper analysis with batch processing
 
-Vector Database (FAISS, Pinecone) for retrieving similar game states
+### 5.3 Multi-Game Adaptability
 
-SQL/NoSQL Databases for structured game logs
+- The tool should be adaptable to different RTS, MOBA, and turn-based games with minor modifications
 
-4.3 API & UI
-
-REST API (FastAPI, Flask) to serve analysis results
-
-Web Dashboard (React, Django, Flask) for visualization
-
-5. Challenges & Considerations
-
-5.1 LLM Fine-Tuning vs. Prompt Engineering
-
-Fine-tuning requires labeled game data
-
-Prompt engineering enables flexible, general-purpose explanations
-
-5.2 Real-Time Processing vs. Post-Game Analysis
-
-Live Coaching requires efficient low-latency inference
-
-Post-Game Reports allow deeper analysis with batch processing
-
-5.3 Multi-Game Adaptability
-
-The tool should be adaptable to different RTS, MOBA, and turn-based games with minor modifications
-
-6. Conclusion & Next Steps
+## 6. Conclusion & Next Steps
 
 This system design lays the foundation for an AI-powered Post-Game Analysis Tool that combines reinforcement learning, LLM-based insights, and retrieval-based strategies to enhance player learning. Future improvements include:
 
-Dynamic strategy adaptation based on evolving gameplay trends
+- Dynamic strategy adaptation based on evolving gameplay trends
+- Integration with esports teams & training programs
+- Automated coaching for ranked ladder progression
 
-Integration with esports teams & training programs
+## 7. References & Further Reading
 
-Automated coaching for ranked ladder progression
-
-7. References & Further Reading
-
-DeepMind’s PySC2 for StarCraft II AI
-
-OpenAI’s work on Reinforcement Learning with Human Feedback (RLHF)
-
-Hugging Face & OpenAI API for LLM-based explanations
+- DeepMind’s PySC2 for StarCraft II AI
+- OpenAI’s work on Reinforcement Learning with Human Feedback (RLHF)
+- Hugging Face & OpenAI API for LLM-based explanations
 
 
 
