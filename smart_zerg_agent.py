@@ -11,18 +11,35 @@ from pysc2.lib import actions
 from pysc2.lib import features
 from logger_config import logger
 
+KILL_UNIT_REWARD = 0.2
+KILL_BUILDING_REWARD = 0.5
+
 class SmartZergAgent(base_agent.BaseAgent):
     def __init__(self):
         super(SmartZergAgent, self).__init__()
 
         self.qlearn = QLearningTable(actions=list(range(len(zerg_actions.smart_actions))))
 
-    def transformLocation(self, x, x_one, y, y_one):
+        self.previous_killed_unit_score = 0
+        self.previous_killed_building_score = 0
+
+        self.previous_action = None
+        self.previous_state = None
+
+    def transformDistance(self, x, x_one, y, y_one):
         if not self.base_top_left:
             return [x - x_one, y - y_one]
         
         return [x + x_one, y + y_one]
     
+    def transformLocation(self, x, y):
+        if not self.base_top_left:
+            return [64-x, 64-y]
+        
+        return [x,y]
+    
+
+
 
     def step(self, obs):
         super(SmartZergAgent, self).step(obs)
@@ -30,7 +47,50 @@ class SmartZergAgent(base_agent.BaseAgent):
         player_y, player_x = (obs.observation['feature_screen'][zerg_definitions._PLAYER_RELATIVE] == zerg_definitions._PLAYER_SELF).nonzero()
         self.base_top_left = 1 if player_y.any() and player_y.mean() <= 31 else 0
 
-        smart_action = zerg_actions.smart_actions[random.randrange(0, len(zerg_actions.smart_actions) - 1)]
+        unit_type = obs.observation['feature_screen'][zerg_definitions._UNIT_TYPE]
+
+        overlord_y, overlord_x = (unit_type == zerg_definitions._ZERG_OVERLORD).nonzero()
+        overlord_count = 1 if overlord_y.any else 0
+
+        spawningpool_y, spawningpool_x = (unit_type == zerg_definitions._ZERG_SPAWNINGPOOL).nonzero()
+        spawningpool_count = 1 if spawningpool_y.any() else 0
+
+        supply_limit = obs.observation['player'][4]
+        army_supply = obs.observation['player'][5]
+
+        killed_unit_score = obs.observation['score_cumulative'][5]
+        killed_building_score = obs.observation['score_cumulative'][6]
+
+        
+
+
+        current_state = [
+            overlord_count,
+            spawningpool_count,
+            supply_limit,
+            army_supply
+        ]
+
+        if self.previous_action is not None:
+            reward = 0
+
+            if killed_unit_score > self.previous_killed_unit_score:
+                reward += KILL_UNIT_REWARD
+            if killed_building_score > self.previous_killed_building_score:
+                reward += KILL_BUILDING_REWARD
+
+            self.qlearn.learn(str(self.previous_state), self.previous_action, reward, str(current_state))
+
+        rl_action = self.qlearn.choose_action(str(current_state))
+        smart_action = zerg_actions.smart_actions[rl_action]
+
+        self.previous_killed_unit_score = killed_unit_score
+        self.previous_killed_building_score = killed_building_score
+        self.previous_state = current_state
+        self.previous_action = rl_action
+
+
+
 
         if smart_action == zerg_actions.ACTION_DO_NOTHING:
             return actions.FunctionCall(zerg_definitions._NO_OP, [])
@@ -57,7 +117,7 @@ class SmartZergAgent(base_agent.BaseAgent):
                 unit_y, unit_x = (unit_type == zerg_definitions._ZERG_HATCHERY).nonzero()
 
                 if unit_y.any():
-                    target = self.transformLocation(int(unit_x.mean()), 20, int(unit_y.mean()), 0)
+                    target = self.transformDistance(int(unit_x.mean()), 20, int(unit_y.mean()), 0)
                     return actions.FunctionCall(zerg_definitions._BUILD_SPAWNINGPOOL, [zerg_definitions._NOT_QUEUED, target])
         elif smart_action == zerg_actions.ACTION_BUILD_ZERGLING:
             if zerg_definitions._TRAIN_ZERGLING in obs.observation['available_actions']:
@@ -90,14 +150,14 @@ class QLearningTable:
 
 
     def choose_action(self, observation):
-        self.check_state_exist(observation)
+        self.check_state_exists(observation)
 
         if np.random.uniform() < self.epsilon:
-            state_action = self.q_table.ix[observation, :]
+            state_action = self.q_table.loc[observation, :]
 
             state_action = state_action.reindex(np.random.permutation(state_action.index))
 
-            action = state_action.idmax()
+            action = state_action.idxmax()
         else:
             action = np.random.choice(self.actions)
         return action
@@ -107,12 +167,12 @@ class QLearningTable:
         self.check_state_exists(s_)
         self.check_state_exists(s)
 
-        q_predict = self.q_table.ix[s, a]
-        q_target = r + self.gamma * self.q_table.ix[s_, :].max()
+        q_predict = self.q_table.loc[s, a]
+        q_target = r + self.gamma * self.q_table.loc[s_, :].max()
 
-        self.q_table.ix[s, a] += self.lr * (q_target-q_predict)
+        self.q_table.loc[s, a] += self.lr * (q_target-q_predict)
 
     def check_state_exists(self, state):
         if state not in self.q_table.index:
-            self.q_table = self.q_table.append(pd.Series([0] * len(self.actions), index=self.q_table.columns, name=state))
-
+            new_row = pd.DataFrame([[0] * len(self.actions)], columns=self.q_table.columns, index=[state])
+            self.q_table = pd.concat([self.q_table, new_row])
