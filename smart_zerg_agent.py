@@ -63,13 +63,29 @@ class SmartZergAgent(base_agent.BaseAgent):
 
         
 
+        current_state = np.zeros(20)
+        current_state[0] = overlord_count
+        current_state[1] = spawningpool_count
+        current_state[2] = supply_limit
+        current_state[3] = army_supply
 
-        current_state = [
-            overlord_count,
-            spawningpool_count,
-            supply_limit,
-            army_supply
-        ]
+        hot_squares = np.zeros(16)
+        enemy_y, enemy_x = (obs.observation['feature_screen'][zerg_definitions._PLAYER_RELATIVE] == zerg_definitions._PLAYER_HOSTILE).nonzero()
+        '''
+        Needed a fix here. Was going out of bounds.
+        '''
+        for i in range(0, len(enemy_y)):
+            y = min(4, max(1, int(math.ceil((enemy_y[i] + 1) / 16))))
+            x = min(4, max(1, int(math.ceil((enemy_x[i] + 1) / 16))))
+
+
+            hot_squares[((y-1)*4) + (x-1)] = 1
+
+        if not self.base_top_left:
+            hot_squares = hot_squares[::-1]
+        
+        for i in range(0, 16):
+            current_state[i+4] = hot_squares[i]
 
         if self.previous_action is not None:
             reward = 0
@@ -139,6 +155,15 @@ class SmartZergAgent(base_agent.BaseAgent):
                     return actions.FunctionCall(zerg_definitions._ATTACK_MINIMAP, [zerg_definitions._NOT_QUEUED, [39, 45]])
                 return actions.FunctionCall(zerg_definitions._ATTACK_MINIMAP, [zerg_definitions._NOT_QUEUED, [21, 24]])
         return actions.FunctionCall(zerg_definitions._NO_OP, [])
+'''
+Narrows the search space down to a 4x4 grid
+
+'''
+for mm_x in range(0, 64):
+    for mm_y in range(0, 64):
+        if (mm_x + 1) % 16 == 0 and (mm_y + 1) % 16 == 0:
+            zerg_actions.smart_actions.append(zerg_actions.ACTION_ATTACK + '_' + str(mm_x - 8) + '_' + str(mm_y - 8))
+
 
 class QLearningTable:
     def __init__(self, actions, learning_rate=0.01, reward_decay=0.9, e_greedy=0.9):
