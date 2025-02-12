@@ -19,11 +19,7 @@ Ensure you have the following installed:
 - OpenAI API (for LLM processing, if applicable)
 
 ### Setup
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/zerg-ai-pysc2.git
-   cd zerg-ai-pysc2
-   ```
+1. Clone the repository.
 2. Install dependencies:
    ```bash
    pip install -r requirements.txt
@@ -35,26 +31,14 @@ Ensure you have the following installed:
 
 ## Usage
 ### Running the AI
-Execute the Zerg AI in a StarCraft II environment:
+Execute the Zerg AI from a terminal:
 ```bash
-python run_zerg_ai.py
+python run_smart_zerg_agent.py
 ```
 
 ### Logging Gameplay Data
 Game events and state transitions are logged into a structured format (e.g., JSON, CSV). Logs can be processed post-game for insights.
 
-### LLM Integration for Strategy Translation
-Enable the LLM module to interpret logged data:
-```bash
-python llm_translate.py --logfile logs/game_data.json
-```
-This converts raw AI decisions into human-readable insights.
-
-### Postgame Analysis
-Generate a performance report from logs:
-```bash
-python analyze_postgame.py --logfile logs/game_data.json
-```
 
 ## Roadmap
 - [ ] Enhance AI decision-making using **deep Q-learning**.
