@@ -15,47 +15,50 @@ def main(unused_argv):
 
     @param unused_argv: The command-line arguments. This parameter is not used in the current implementation.
     """
+    num_games = 10
     # Create a new instance of the ZergAI agent
-    agent = SmartZergAgent()
+    for game in range(num_games):
+        agent = SmartZergAgent()
+        gs.load_game_stats()
 
-    try:
-        # Set up the StarCraft II environment with a Zerg agent vs Terran bot
-        with sc2_env.SC2Env(
-            map_name="Simple64",  # Map used for the game
-            players=[
-                sc2_env.Agent(sc2_env.Race.zerg),  # The AI agent controlling the Zerg race
-                sc2_env.Bot(sc2_env.Race.terran, sc2_env.Difficulty.easy)  # Opponent bot (Terran)
-            ],
-            agent_interface_format=features.AgentInterfaceFormat(
-                feature_dimensions=features.Dimensions(screen=84, minimap=64),  # Feature dimensions
-                use_feature_units=True  # Use the feature units for unit-level information
-            ),
-            step_mul=8,  # Number of simulation steps per game step
-            game_steps_per_episode=0,  # Number of steps per episode (0 means no limit)
-            visualize=True  # Whether to visualize the game (True/False)
-        ) as env:
-            # Set up the agent with the environment's observation and action specs
-            agent.setup(env.observation_spec(), env.action_spec())
+        try:
+            # Set up the StarCraft II environment with a Zerg agent vs Terran bot
+            with sc2_env.SC2Env(
+                map_name="Simple64",  # Map used for the game
+                players=[
+                    sc2_env.Agent(sc2_env.Race.zerg),  # The AI agent controlling the Zerg race
+                    sc2_env.Bot(sc2_env.Race.terran, sc2_env.Difficulty.easy)  # Opponent bot (Terran)
+                ],
+                agent_interface_format=features.AgentInterfaceFormat(
+                    feature_dimensions=features.Dimensions(screen=84, minimap=64),  # Feature dimensions
+                    use_feature_units=True  # Use the feature units for unit-level information
+                ),
+                step_mul=8,  # Number of simulation steps per game step
+                game_steps_per_episode=0,  # Number of steps per episode (0 means no limit)
+                visualize=True  # Whether to visualize the game (True/False)
+            ) as env:
+                # Set up the agent with the environment's observation and action specs
+                agent.setup(env.observation_spec(), env.action_spec())
 
-            # Reset the environment and start the first episode
-            timesteps = env.reset()
-            agent.reset()
+                # Reset the environment and start the first episode
+                timesteps = env.reset()
+                agent.reset()
 
-            # Run the simulation loop until the episode ends
-            while True:
-                # The agent decides on an action for this step
-                step_actions = [agent.step(timesteps[0])]
-                
-                # If the episode is finished, break the loop
-                if timesteps[0].last():
-                    break
-                
-                # Step the environment with the agent's action and get the next timestep
-                timesteps = env.step(step_actions)
+                # Run the simulation loop until the episode ends
+                while True:
+                    # The agent decides on an action for this step
+                    step_actions = [agent.step(timesteps[0])]
+                    
+                    # If the episode is finished, break the loop
+                    if timesteps[0].last():
+                        break
+                    
+                    # Step the environment with the agent's action and get the next timestep
+                    timesteps = env.step(step_actions)
 
-    except KeyboardInterrupt:
-        # Gracefully handle a KeyboardInterrupt (Ctrl+C)
-        pass
+        except KeyboardInterrupt:
+            # Gracefully handle a KeyboardInterrupt (Ctrl+C)
+            pass
 
 
 if __name__ == "__main__":

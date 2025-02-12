@@ -11,9 +11,10 @@ import zerg_actions
 from pysc2.lib import actions
 from pysc2.lib import features
 from logger_config import logger
+import game_stats_tracker as gs
 
-KILL_UNIT_REWARD = 0.2
-KILL_BUILDING_REWARD = 0.5
+# KILL_UNIT_REWARD = 0.2
+# KILL_BUILDING_REWARD = 0.5
 
 DATA_FILE = 'sparse_agent_data'
 
@@ -31,7 +32,7 @@ class SmartZergAgent(base_agent.BaseAgent):
         super(SmartZergAgent, self).__init__()
 
         self.qlearn = QLearningTable(actions=list(range(len(zerg_actions.smart_actions))))
-
+        self.wins, self.losses, self.games_played = gs.load_game_stats() 
         self.previous_killed_unit_score = 0
         self.previous_killed_building_score = 0
 
@@ -78,6 +79,7 @@ class SmartZergAgent(base_agent.BaseAgent):
             reward = obs.reward
             self.qlearn.learn(str(self.previous_state), self.previous_action, reward, 'terminal')
             self.qlearn.q_table.to_pickle(DATA_FILE + '.gz', 'gzip')
+            gs.save_game_stats(self.wins, self.losses, self.games_played)
             
             self.previous_action = None
             self.previous_state = None
