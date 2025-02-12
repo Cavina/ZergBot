@@ -9,6 +9,7 @@ _TRAIN_ZERGLING = actions.FUNCTIONS.Train_Zergling_quick.id
 _TRAIN_OVERLORD = actions.FUNCTIONS.Train_Overlord_quick.id
 _SELECT_ARMY = actions.FUNCTIONS.select_army.id
 _ATTACK_MINIMAP = actions.FUNCTIONS.Attack_minimap.id
+_HARVEST_GATHER = actions.FUNCTIONS.Harvest_Gather_screen.id
 
 _PLAYER_RELATIVE = features.SCREEN_FEATURES.player_relative.index
 _UNIT_TYPE = features.SCREEN_FEATURES.unit_type.index
@@ -17,6 +18,7 @@ _PLAYER_ID = features.SCREEN_FEATURES.player_id.index
 
 _PLAYER_SELF = 1
 _PLAYER_HOSTILE = 4
+_ARMY_SUPPLY = 5
 
 _ZERG_HATCHERY = 86
 _ZERG_DRONE = 104
