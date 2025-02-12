@@ -15,7 +15,7 @@ def main(unused_argv):
 
     @param unused_argv: The command-line arguments. This parameter is not used in the current implementation.
     """
-    num_games = 10
+    num_games = 1
     # Create a new instance of the ZergAI agent
     for game in range(num_games):
         agent = SmartZergAgent()

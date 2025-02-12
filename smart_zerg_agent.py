@@ -32,7 +32,7 @@ class SmartZergAgent(base_agent.BaseAgent):
         super(SmartZergAgent, self).__init__()
 
         self.qlearn = QLearningTable(actions=list(range(len(zerg_actions.smart_actions))))
-        self.wins, self.losses, self.games_played = gs.load_game_stats() 
+        self.wins, self.losses, self.ties, self.games_played = gs.load_game_stats() 
         self.previous_killed_unit_score = 0
         self.previous_killed_building_score = 0
 
@@ -79,7 +79,14 @@ class SmartZergAgent(base_agent.BaseAgent):
             reward = obs.reward
             self.qlearn.learn(str(self.previous_state), self.previous_action, reward, 'terminal')
             self.qlearn.q_table.to_pickle(DATA_FILE + '.gz', 'gzip')
-            gs.save_game_stats(self.wins, self.losses, self.games_played)
+            if reward > 0:
+                self.wins += 1
+            elif reward < 0:
+                self.losses += 1
+            else:
+                self.ties += 1
+
+            gs.save_game_stats(self.wins, self.losses, self.ties, self.games_played+1)
             
             self.previous_action = None
             self.previous_state = None
