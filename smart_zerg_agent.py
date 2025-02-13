@@ -13,10 +13,12 @@ from pysc2.lib import features
 from logger_config import logger, rl_logger
 import game_stats_tracker as gs
 from q_learning_table import *
+from episode_logging import *
 # KILL_UNIT_REWARD = 0.2
 # KILL_BUILDING_REWARD = 0.5
 
 DATA_FILE = 'sparse_agent_data'
+TOTAL_ACTIONS = 0
 
 '''
 Narrows the search space down to a 4x4 grid
@@ -81,6 +83,12 @@ class SmartZergAgent(base_agent.BaseAgent):
         super(SmartZergAgent, self).step(obs)
         #minimap should be feature_minimap
         #If we are on the last observation, we should learn and write the q-table as well as the game stats log
+        global TOTAL_ACTIONS
+        TOTAL_ACTIONS += 1
+        game_time_seconds = obs.observation["game_loop"] / 22.4
+        apm = (TOTAL_ACTIONS / game_time_seconds) * 60 if game_time_seconds > 0 else 0
+
+
         if obs.last():
             reward = obs.reward
             self.qlearn.learn(str(self.previous_state), self.previous_action, reward, 'terminal')
@@ -93,6 +101,8 @@ class SmartZergAgent(base_agent.BaseAgent):
                 self.ties += 1
 
             gs.save_game_stats(self.wins, self.losses, self.ties, self.games_played+1)
+            units_killed = obs.observation["score_cumulative"]["killed_value_units"]
+            log_episode(self.games_played+1, reward, obs.observation["game_loop"], apm, units_killed)
             
             self.previous_action = None
             self.previous_state = None
