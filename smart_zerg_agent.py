@@ -44,21 +44,26 @@ class SmartZergAgent(base_agent.BaseAgent):
 
         self.move_number = 0
 
+
+        #Checks if there is an existing q-table and loads it.
         if os.path.isfile(DATA_FILE + '.gz'):
             self.qlearn.q_table = pd.read_pickle(DATA_FILE + '.gz', compression='gzip')
 
+    #Transforms distance
     def transformDistance(self, x, x_one, y, y_one):
         if not self.base_top_left:
             return [x - x_one, y - y_one]
         
         return [x + x_one, y + y_one]
     
+    #Transforms location 
     def transformLocation(self, x, y):
         if not self.base_top_left:
             return [64-x, 64-y]
         
         return [x,y]
     
+    #Splits actions for future decision chains
     def splitAction(self, action_id):
         smart_action = zerg_actions.smart_actions[action_id]
 
@@ -71,10 +76,11 @@ class SmartZergAgent(base_agent.BaseAgent):
 
 
 
-
+    #Step function for the environment
     def step(self, obs):
         super(SmartZergAgent, self).step(obs)
         #minimap should be feature_minimap
+        #If we are on the last observation, we should learn and write the q-table as well as the game stats log
         if obs.last():
             reward = obs.reward
             self.qlearn.learn(str(self.previous_state), self.previous_action, reward, 'terminal')
@@ -98,19 +104,21 @@ class SmartZergAgent(base_agent.BaseAgent):
 
 
         unit_type = obs.observation['feature_screen'][zerg_definitions._UNIT_TYPE]
-
+        #If the first observation, we can do some setup 
         if obs.first():
             player_y, player_x = (obs.observation['feature_minimap'][zerg_definitions._PLAYER_RELATIVE] == zerg_definitions._PLAYER_SELF).nonzero()
             self.base_top_left = 1 if player_y.any() and player_y.mean() <= 31 else 0
             self.cc_y, self.cc_x = (unit_type == zerg_definitions._ZERG_HATCHERY).nonzero()
             
-
+        #Checking for overlord counts
         overlord_y, overlord_x = (unit_type == zerg_definitions._ZERG_OVERLORD).nonzero()
         overlord_count = 1 if overlord_y.any else 0
 
+        #Checking for spawning Pool counts
         spawningpool_y, spawningpool_x = (unit_type == zerg_definitions._ZERG_SPAWNINGPOOL).nonzero()
         spawningpool_count = 1 if spawningpool_y.any() else 0
 
+        #Establishing supply_limits and current supply for future calculations
         supply_limit = obs.observation['player'][4]
         army_supply = obs.observation['player'][5]
 
@@ -118,18 +126,18 @@ class SmartZergAgent(base_agent.BaseAgent):
         # killed_building_score = obs.observation['score_cumulative'][6]
 
                 
-
+        #Store the initial states in the current state.
         current_state = np.zeros(20)
         current_state[0] = overlord_count
         current_state[1] = spawningpool_count
         current_state[2] = supply_limit
         current_state[3] = army_supply
 
+        #Adding hot squares to store enemy positions.
         hot_squares = np.zeros(16)
         enemy_y, enemy_x = (obs.observation['feature_minimap'][zerg_definitions._PLAYER_RELATIVE] == zerg_definitions._PLAYER_HOSTILE).nonzero()
-        '''
-        Needed a fix here. Was going out of bounds.
-        '''
+
+        #Fixed the previous error by constraining earlier and reducing the problem space size.
         for i in range(0, len(enemy_y)):
             y = int(math.ceil((enemy_y[i] + 1) / 16))
             x = int(math.ceil((enemy_x[i] + 1) / 16))
@@ -150,12 +158,16 @@ class SmartZergAgent(base_agent.BaseAgent):
             # #     reward += KILL_UNIT_REWARD
             # # if killed_building_score > self.previous_killed_building_score:
             # #     reward += KILL_BUILDING_REWARD
-
+            
+            #Learn from every step so long as it is not the first step.
             self.qlearn.learn(str(self.previous_state), self.previous_action, 0, str(current_state))
 
+        #Extract the action index determined from the learning table
         rl_action = self.qlearn.choose_action(str(current_state))
 
+        #Set the action to be taken
         smart_action = zerg_actions.smart_actions[rl_action]
+        #Log the current state and smart action taken.
         rl_logger.debug(str(current_state) + " smart_action: " + smart_action)
 
         # self.previous_killed_unit_score = killed_unit_score
@@ -222,43 +234,3 @@ class SmartZergAgent(base_agent.BaseAgent):
 
 
 
-# class QLearningTable:
-#     def __init__(self, actions, learning_rate=0.01, reward_decay=0.9, e_greedy=0.9):
-#         self.actions = actions
-#         self.lr = learning_rate
-#         self.gamma = reward_decay
-#         self.epsilon = e_greedy
-#         self.q_table = pd.DataFrame(columns=self.actions, dtype=np.float64)
-
-
-#     def choose_action(self, observation):
-#         self.check_state_exists(observation)
-
-#         if np.random.uniform() < self.epsilon:
-#             state_action = self.q_table.loc[observation, :]
-
-#             state_action = state_action.reindex(np.random.permutation(state_action.index))
-
-#             action = state_action.idxmax()
-#         else:
-#             action = np.random.choice(self.actions)
-#         return action
-    
-
-#     def learn(self, s, a, r, s_):
-#         self.check_state_exists(s_)
-#         self.check_state_exists(s)
-
-#         q_predict = self.q_table.loc[s, a]
-
-#         if s_ != 'terminal':
-#             q_target = r + self.gamma * self.q_table.loc[s_, :].max()
-#         else:
-#             q_target = r
-
-#         self.q_table.loc[s, a] += self.lr * (q_target-q_predict)
-
-#     def check_state_exists(self, state):
-#         if state not in self.q_table.index:
-#             new_row = pd.DataFrame([[0] * len(self.actions)], columns=self.q_table.columns, index=[state])
-#             self.q_table = pd.concat([self.q_table, new_row])
