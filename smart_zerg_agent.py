@@ -10,7 +10,7 @@ import zerg_definitions
 import zerg_actions 
 from pysc2.lib import actions
 from pysc2.lib import features
-from logger_config import logger
+from logger_config import logger, rl_logger
 import game_stats_tracker as gs
 
 # KILL_UNIT_REWARD = 0.2
@@ -156,6 +156,7 @@ class SmartZergAgent(base_agent.BaseAgent):
         rl_action = self.qlearn.choose_action(str(current_state))
 
         smart_action = zerg_actions.smart_actions[rl_action]
+        rl_logger.debug(str(current_state) + " smart_action: " + smart_action)
 
         # self.previous_killed_unit_score = killed_unit_score
         # self.previous_killed_building_score = killed_building_score
@@ -195,7 +196,9 @@ class SmartZergAgent(base_agent.BaseAgent):
         elif smart_action == zerg_actions.ACTION_BUILD_ZERGLING:
             if zerg_definitions._TRAIN_ZERGLING in obs.observation['available_actions']:
                 return actions.FunctionCall(zerg_definitions._TRAIN_ZERGLING, [zerg_definitions._NOT_QUEUED])
-        
+        elif smart_action == zerg_actions.ACTION_BUILD_DRONE:
+            if zerg_definitions._TRAIN_DRONE in obs.observation['available_actions']:
+                return actions.FunctionCall(zerg_definitions._TRAIN_DRONE, [zerg_definitions._NOT_QUEUED])
         elif smart_action == zerg_actions.ACTION_BUILD_OVERLORD:
             if zerg_definitions._TRAIN_OVERLORD in obs.observation['available_actions']:
                 supply_available = obs.observation["player"][4] - obs.observation["player"][3]
@@ -205,8 +208,12 @@ class SmartZergAgent(base_agent.BaseAgent):
         elif smart_action == zerg_actions.ACTION_SELECT_ARMY:
             if zerg_definitions._SELECT_ARMY in obs.observation['available_actions']:
                 return actions.FunctionCall(zerg_definitions._SELECT_ARMY, [zerg_definitions._NOT_QUEUED])
-
         elif smart_action == zerg_actions.ACTION_ATTACK:
+            unit_type = obs.observation['feature_screen'][zerg_definitions._UNIT_TYPE]
+            unit_y, unit_x = (unit_type == zerg_definitions._ZERG_DRONE).nonzero() 
+
+            if unit_y.any():
+                return actions.FunctionCall(zerg_definitions._NO_OP, [])
             if zerg_definitions._ATTACK_MINIMAP in obs.observation['available_actions']:
                 if self.base_top_left:
                     return actions.FunctionCall(zerg_definitions._ATTACK_MINIMAP, [zerg_definitions._NOT_QUEUED, [39, 45]])
