@@ -37,6 +37,10 @@ class SmartZergAgent(base_agent.BaseAgent):
         self.wins, self.losses, self.ties, self.games_played = gs.load_game_stats() 
         self.previous_killed_unit_score = 0
         self.previous_killed_building_score = 0
+        
+        self.total_friendly_units_lost = 0
+        self.prev_friendly_units = set()
+        
 
         self.previous_action = None
         self.previous_state = None
@@ -88,7 +92,7 @@ class SmartZergAgent(base_agent.BaseAgent):
         game_time_seconds = obs.observation["game_loop"] / 22.4
         apm = (TOTAL_ACTIONS / game_time_seconds) * 60 if game_time_seconds > 0 else 0
 
-
+        
         if obs.last():
             reward = obs.reward
             self.qlearn.learn(str(self.previous_state), self.previous_action, reward, 'terminal')
@@ -101,13 +105,21 @@ class SmartZergAgent(base_agent.BaseAgent):
                 self.ties += 1
 
             gs.save_game_stats(self.wins, self.losses, self.ties, self.games_played+1)
-            units_killed = obs.observation["score_cumulative"]["killed_value_units"]
-            log_episode(self.games_played+1, reward, obs.observation["game_loop"], apm, units_killed)
+
+
+            # Update the stored unit tags for the next step
+            # lost_units = self.prev_friendly_units - friendly_units
+            # self.total_friendly_units_lost += len(lost_units)
+            # self.prev_friendly_units = friendly_units
+           
+            log_episode(self.games_played+1, reward, obs.observation["game_loop"], apm, 0, self.total_friendly_units_lost)
             
             self.previous_action = None
             self.previous_state = None
             
             self.move_number = 0
+
+
             
             return actions.FunctionCall(zerg_definitions._NO_OP, [])
 
@@ -178,14 +190,15 @@ class SmartZergAgent(base_agent.BaseAgent):
         #Set the action to be taken
         smart_action = zerg_actions.smart_actions[rl_action]
         #Log the current state and smart action taken.
-        rl_logger.debug(str(current_state) + " smart_action: " + smart_action)
+        #rl_logger.debug(str(current_state) + " smart_action: " + smart_action)
 
         # self.previous_killed_unit_score = killed_unit_score
-        # self.previous_killed_building_score = killed_building_score
+        # # self.previous_killed_building_score = killed_building_score
+
         self.previous_state = current_state
         self.previous_action = rl_action
 
-
+        
 
 
         if smart_action == zerg_actions.ACTION_DO_NOTHING:
@@ -240,6 +253,10 @@ class SmartZergAgent(base_agent.BaseAgent):
                 if self.base_top_left:
                     return actions.FunctionCall(zerg_definitions._ATTACK_MINIMAP, [zerg_definitions._NOT_QUEUED, [39, 45]])
                 return actions.FunctionCall(zerg_definitions._ATTACK_MINIMAP, [zerg_definitions._NOT_QUEUED, [21, 24]])
+            
+
+
+     
         return actions.FunctionCall(zerg_definitions._NO_OP, [])
 
 

@@ -31,7 +31,9 @@ def main(unused_argv):
                 ],
                 agent_interface_format=features.AgentInterfaceFormat(
                     feature_dimensions=features.Dimensions(screen=84, minimap=64),  # Feature dimensions
-                    use_feature_units=True  # Use the feature units for unit-level information
+                    use_feature_units=True,# Use the feature units for unit-level information
+                    use_raw_units=True,
+                    use_unit_counts=True  #use raw units for raw unit data
                 ),
                 step_mul=8,  # Number of simulation steps per game step
                 game_steps_per_episode=0,  # Number of steps per episode (0 means no limit)
