@@ -181,3 +181,4 @@ game_stats.json
 rl_actions.log
 rl_episode_log.csv
 sparse_agent_data.gz
+episode_log.log
