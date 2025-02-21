@@ -178,6 +178,7 @@ cython_debug/
 
 #Project stuff
 game_stats.json
+debug.log
 rl_actions.log
 rl_episode_log.csv
 sparse_agent_data.gz
