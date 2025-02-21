@@ -23,7 +23,7 @@ episode_logger.addHandler(file_handler)
 
 
 # Function to log episodic stats
-def log_episode(episode, total_reward, steps, apm, units_killed):
+def log_episode(episode, total_reward, steps, apm, units_killed, units_lost):
     """
     Logs episodic performance to both a log file and a CSV file.
     """
@@ -36,7 +36,8 @@ def log_episode(episode, total_reward, steps, apm, units_killed):
     # Log to log file
     episode_logger.info(
         f"Episode: {episode} | Result: {result_str} | Reward: {total_reward} | "
-        f"Steps: {steps} | APM: {apm} | Units Killed: {units_killed}"
+        f"Steps: {steps} | APM: {apm} | Units Killed: {units_killed} | "
+        f"Units Lost: {units_lost}"
     )
 
     # Log to CSV
@@ -47,6 +48,7 @@ def log_episode(episode, total_reward, steps, apm, units_killed):
         "Steps": [steps],
         "APM": [apm],
         "Units Killed": [units_killed],
+        "Units Lost": [units_lost],
     }
 
     df = pd.DataFrame(log_data)
